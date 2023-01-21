@@ -4,6 +4,8 @@ import 'package:flutterquiz230120/models/question_model.dart';
 import 'package:flutterquiz230120/widgets/next_button.dart';
 import 'package:flutterquiz230120/widgets/option_card.dart';
 import 'package:flutterquiz230120/widgets/question_widget.dart';
+import 'package:flutterquiz230120/widgets/result_box.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -28,13 +30,49 @@ class _HomePageState extends State<HomePage> {
 
   int index = 0;
 
+  int score = 0;
+
+  bool isPressed = false;
+
+  bool isAlreadySelected = false;
+
   void nextQuestion() {
     if (index == _questions.length - 1) {
+      showDialog(context: context, builder: (ctx) => ResultBox());
+    } else {
+      if (isPressed) {
+        setState(() {
+          index++;
+          isPressed = false;
+          isAlreadySelected = false;
+        });
+      } else {
+        // Fluttertoast.showToast(
+        //     msg: "선택을 하셔야합니다.",
+        //     backgroundColor: Colors.white,
+        //     toastLength: Toast.LENGTH_SHORT,
+        //     gravity: ToastGravity.BOTTOM);
+
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('문제에 답을 하셔야합니다.'),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.symmetric(vertical: 20.0),
+        ));
+      }
+    }
+  }
+
+  void checkAnswerAndUpdate(bool value) {
+    if (isAlreadySelected) {
       return;
     } else {
-      setState(() {
-        index++;
-      });
+      if (value == true) {
+        score++;
+        setState(() {
+          isPressed = true;
+          isAlreadySelected = true;
+        });
+      }
     }
   }
 
@@ -46,6 +84,15 @@ class _HomePageState extends State<HomePage> {
         title: Text("Quiz App"),
         backgroundColor: background,
         shadowColor: Colors.transparent,
+        actions: [
+          Padding(
+            padding: EdgeInsets.all(18),
+            child: Text(
+              '점수: $score',
+              style: TextStyle(fontSize: 18),
+            ),
+          )
+        ],
       ),
       body: Container(
         width: double.infinity,
@@ -64,7 +111,19 @@ class _HomePageState extends State<HomePage> {
               height: 25.0,
             ),
             for (int i = 0; i < _questions[index].options.length; i++)
-              OptionCard(option: _questions[index].options.keys.toList()[i])
+              GestureDetector(
+                onTap: () => checkAnswerAndUpdate(
+                  _questions[index].options.values.toList()[i],
+                ),
+                child: OptionCard(
+                  option: _questions[index].options.keys.toList()[i],
+                  color: isPressed
+                      ? _questions[index].options.values.toList()[i] == true
+                          ? correct
+                          : incorrent
+                      : neutral,
+                ),
+              )
           ],
         ),
       ),
